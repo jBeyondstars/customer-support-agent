@@ -1,0 +1,43 @@
+# E-bike care guide
+
+A short guide to keep your Nomad e-bike running well. Ten minutes a week saves a lot of workshop visits.
+
+## Before every ride
+
+Check the tyre pressure. Recommended ranges:
+- Urban E5: 3.5 to 4.5 bar
+- Trail E7: 1.6 to 2.2 bar, depending on the terrain and your weight
+- Cargo E9: 2.5 to 3.5 bar, top of the range when carrying kids
+
+Squeeze both brakes, check the lights, and make sure the battery is locked in place.
+
+## Chain
+
+Clean and lube the chain every 200 to 300 km, more often if you ride in the rain. E-bike chains wear faster than on a regular bike because of the motor torque. Check the wear every 1,000 km. Most chains need replacing between 2,000 and 3,000 km.
+
+## Battery
+
+- For daily use, keep it between 20% and 80% when you can. It lasts longer that way.
+- If you don't ride for more than a month, store it at 30 to 60% charge, somewhere dry between 10 and 20 degrees C, and top it up every 2 months.
+- Never charge it below 0 degrees C or above 40 degrees C.
+- Only use the original charger.
+- Don't leave the battery in a car in summer.
+
+## Cleaning
+
+A bucket, a sponge and a low-pressure hose are fine. Never use a pressure washer. Take the battery out before washing, then dry the contacts before putting it back.
+
+## Brakes
+
+Check the brake pads every 500 km. Replace them when there's less than 1.5 mm of pad left. If the brakes squeal after riding in the rain, that's usually just dirt, clean the discs with isopropyl alcohol.
+
+## Service intervals
+
+First service after 300 km or 3 months, whichever comes first. It's free for bikes bought from us. After that, one service every 2,000 km or once a year.
+
+## Error codes on the display
+
+- E10: battery communication error. Switch off, take the battery out, put it back firmly and restart.
+- E21: motor overheating. Stop and let it cool down for 15 minutes. It mostly happens on long steep climbs on the highest assist level.
+- E30: speed sensor error. Check that the magnet on the rear wheel is still in place and lined up with the sensor on the frame.
+- Any other code, or a code that keeps coming back: contact customer service, with a photo of the display if you can.
