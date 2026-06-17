@@ -9,7 +9,7 @@ load_dotenv()
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql://support:support@localhost:5433/support"
+    database_url: str = "postgresql://support:support@localhost:55432/support"
     chat_model: str = "openai:gpt-6-luna"
     judge_model: str = "openai:gpt-6.1-sol"
     embedding_model: str = "text-embedding-3-small"
