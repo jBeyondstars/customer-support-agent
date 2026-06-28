@@ -1,0 +1,40 @@
+{"question": "How long do I have to send something back?", "expected": ["returns-and-refunds.md"]}
+{"question": "Can I return energy gels I haven't opened?", "expected": ["returns-and-refunds.md", "accessories-and-parts.md"]}
+{"question": "Who pays for the pickup when I return an e-bike?", "expected": ["returns-and-refunds.md"]}
+{"question": "My display shows E30, what does it mean?", "expected": ["ebike-care-guide.pdf"]}
+{"question": "What does error E21 mean?", "expected": ["ebike-care-guide.pdf"]}
+{"question": "How often should I lube the chain?", "expected": ["ebike-care-guide.pdf"]}
+{"question": "Is the battery covered if it loses capacity after a year?", "expected": ["warranty.pdf"]}
+{"question": "Does fitting a speed tuning kit void my warranty?", "expected": ["warranty.pdf", "ebike-faq.md"]}
+{"question": "If I sell my bike, does the frame warranty go to the new owner?", "expected": ["warranty.pdf"]}
+{"question": "Can I pay in instalments?", "expected": ["orders-and-payment.md"]}
+{"question": "When is my card charged?", "expected": ["orders-and-payment.md"]}
+{"question": "Can you put my company's VAT number on the invoice?", "expected": ["orders-and-payment.md"]}
+{"question": "How much is delivery to Belgium for a bike?", "expected": ["shipping.md"]}
+{"question": "Do you deliver bikes to Corsica?", "expected": ["shipping.md"]}
+{"question": "My tracking hasn't changed in a week", "expected": ["shipping.md"]}
+{"question": "The box arrived crushed, what should I do?", "expected": ["damaged-or-missing-items.md"]}
+{"question": "The charger wasn't in the box", "expected": ["damaged-or-missing-items.md"]}
+{"question": "I'm 1m75, which frame size should I get?", "expected": ["size-guide.md"]}
+{"question": "Which bike would fit my 9 year old?", "expected": ["size-guide.md", "bikes.md"]}
+{"question": "Which e-bike has the biggest battery?", "expected": ["ebikes.md"]}
+{"question": "Does the spare battery fit the Trail E7?", "expected": ["ebikes.md", "accessories-and-parts.md"]}
+{"question": "Can the cargo bike carry two children?", "expected": ["ebikes.md"]}
+{"question": "How wide can the tyres be on the gravel bike?", "expected": ["bikes.md"]}
+{"question": "How much does a full service cost?", "expected": ["workshop-and-servicing.md"]}
+{"question": "Is the first service free?", "expected": ["workshop-and-servicing.md", "ebike-care-guide.pdf"]}
+{"question": "When can I call you?", "expected": ["contact-and-hours.md"]}
+{"question": "Are you open in August?", "expected": ["contact-and-hours.md", "shipping.md"]}
+{"question": "How long is a gift card valid?", "expected": ["gift-cards-and-promo-codes.md"]}
+{"question": "Can I use a discount code on a custom build?", "expected": ["gift-cards-and-promo-codes.md"]}
+{"question": "How do I delete my account?", "expected": ["account-and-privacy.md"]}
+{"question": "Can the chatbot see my credit card number?", "expected": ["account-and-privacy.md"]}
+{"question": "Is it ok to ride the e-bike when it's pouring?", "expected": ["ebike-faq.md"]}
+{"question": "Do I need insurance for an e-bike?", "expected": ["ebike-faq.md"]}
+{"question": "Combien de temps ai-je pour retourner un article ?", "expected": ["returns-and-refunds.md"], "lang": "fr"}
+{"question": "Mon colis n'a pas bougé depuis une semaine, que faire ?", "expected": ["shipping.md"], "lang": "fr"}
+{"question": "Quelle taille de cadre pour 1m80 ?", "expected": ["size-guide.md"], "lang": "fr"}
+{"question": "Comment stocker la batterie pendant l'hiver ?", "expected": ["ebike-care-guide.pdf"], "lang": "fr"}
+{"question": "Est-ce que je peux payer en plusieurs fois ?", "expected": ["orders-and-payment.md"], "lang": "fr"}
+{"question": "Le casque est arrivé fissuré", "expected": ["damaged-or-missing-items.md"], "lang": "fr"}
+{"question": "La garantie du cadre dure combien de temps ?", "expected": ["warranty.pdf"], "lang": "fr"}
