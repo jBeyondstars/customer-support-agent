@@ -12,11 +12,18 @@ from pathlib import Path
 import psycopg
 
 from support_agent.config import get_settings
-from support_agent.llm import get_embeddings
+from support_agent.llm import get_chat_model, get_embeddings
 from support_agent.rag.retriever import hybrid_search, keyword_search, vector_search
 
 HERE = Path(__file__).parent
 K = 5
+
+# Without the shop context, "casque" comes back as "headset".
+REWRITE_PROMPT = """You search the help pages of Nomad Cycles, an online bike shop. \
+The pages are in English. Rewrite the customer's message as a short English search query. \
+Reply with the query only.
+
+Customer message: {question}"""
 
 METHODS = {
     "vector": lambda conn, question, embedding: vector_search(conn, embedding, K),
@@ -74,10 +81,40 @@ def main() -> None:
     for name, questions in not_first.items():
         report += ["", f"Not ranked first by {name}:", *[f"- {q}" for q in questions]]
 
+    report += ["", *rewritten_french_section(cases)]
+
     text = "\n".join(report) + "\n"
     (HERE / "reports").mkdir(exist_ok=True)
-    (HERE / "reports" / "retrieval.md").write_text(text, encoding="utf-8")
+    (HERE / "reports" / "retrieval.md").write_text(text, encoding="utf-8", newline="\n")
     print(text)
+
+
+def rewritten_french_section(cases: list[dict]) -> list[str]:
+    # In the app the agent writes the search query itself, and the tool
+    # description asks for English. This replays that step on the French questions.
+    french = [case for case in cases if case.get("lang") == "fr"]
+    replies = get_chat_model().batch(
+        [REWRITE_PROMPT.format(question=c["question"]) for c in french]
+    )
+    queries = [reply.text.strip() for reply in replies]
+    embeddings = get_embeddings().embed_documents(queries)
+
+    lines = [
+        "## French questions rewritten in English first",
+        "",
+        "| method | hit@1 FR | MRR FR |",
+        "|---|---|---|",
+    ]
+    with psycopg.connect(get_settings().database_url) as conn:
+        for name, run in METHODS.items():
+            ranks = [
+                first_hit(run(conn, query, embedding), case["expected"])
+                for case, query, embedding in zip(french, queries, embeddings, strict=True)
+            ]
+            lines.append(f"| {name} | {hit_at(ranks, 1):.0%} | {mrr(ranks):.2f} |")
+
+    rewrites = [f"- {c['question']} -> {q}" for c, q in zip(french, queries, strict=True)]
+    return [*lines, "", "Rewrites:", *rewrites]
 
 
 if __name__ == "__main__":

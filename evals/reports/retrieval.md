@@ -40,3 +40,20 @@ Not ranked first by hybrid:
 - Combien de temps ai-je pour retourner un article ? (rank 2)
 - Comment stocker la batterie pendant l'hiver ? (rank 2)
 - Le casque est arrivé fissuré (rank 2)
+
+## French questions rewritten in English first
+
+| method | hit@1 FR | MRR FR |
+|---|---|---|
+| vector | 86% | 0.93 |
+| keyword | 86% | 0.93 |
+| hybrid | 86% | 0.93 |
+
+Rewrites:
+- Combien de temps ai-je pour retourner un article ? -> How long do I have to return an item?
+- Mon colis n'a pas bougé depuis une semaine, que faire ? -> Parcel tracking hasn’t updated for a week
+- Quelle taille de cadre pour 1m80 ? -> frame size for 1.80 m height
+- Comment stocker la batterie pendant l'hiver ? -> How to store the battery over winter?
+- Est-ce que je peux payer en plusieurs fois ? -> Can I pay in installments?
+- Le casque est arrivé fissuré -> helmet arrived cracked
+- La garantie du cadre dure combien de temps ? -> frame warranty duration
