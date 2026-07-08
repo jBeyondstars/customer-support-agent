@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from typing import Literal
 
@@ -5,16 +6,28 @@ from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
-from langgraph.runtime import Runtime
 from langgraph.types import Command, interrupt
 
+from support_agent.agent.guard import screen
 from support_agent.agent.prompts import system_prompt
 from support_agent.agent.state import Context
 from support_agent.agent.tools import NEEDS_CONFIRMATION, TOOLS
 from support_agent.llm import get_chat_model
 
+log = logging.getLogger(__name__)
 
-def agent(state: MessagesState, runtime: Runtime[Context]) -> dict:
+
+def guard(state: MessagesState) -> Command[Literal["agent", "__end__"]]:
+    verdict = screen(state["messages"])
+    if verdict.category == "ok":
+        return Command(goto="agent")
+
+    # The agent, and so the tools, never see a message the guard turned down.
+    log.info("guard blocked a message (%s): %s", verdict.category, verdict.reason)
+    return Command(goto=END, update={"messages": [AIMessage(verdict.reply, name="guard")]})
+
+
+def agent(state: MessagesState) -> dict:
     model = get_chat_model().bind_tools(TOOLS)
     # The system prompt isn't stored in the state, so it can change (date, wording)
     # without rewriting old conversations.
@@ -54,11 +67,12 @@ def confirm(state: MessagesState) -> Command[Literal["tools", "agent"]]:
 
 def build_graph(checkpointer: BaseCheckpointSaver | None = None):
     graph = StateGraph(MessagesState, context_schema=Context)
+    graph.add_node("guard", guard)
     graph.add_node("agent", agent)
     graph.add_node("confirm", confirm)
     graph.add_node("tools", ToolNode(TOOLS))
 
-    graph.add_edge(START, "agent")
+    graph.add_edge(START, "guard")
     graph.add_conditional_edges("agent", route_after_agent)
     graph.add_edge("tools", "agent")
 
