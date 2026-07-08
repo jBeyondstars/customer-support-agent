@@ -14,21 +14,8 @@ pytestmark = pytest.mark.integration
 CAMILLE = 1
 
 
-class ScriptedModel:
-    """Stands in for the LLM: replays fixed answers so the graph logic can be tested."""
-
-    def __init__(self, *replies: AIMessage):
-        self.replies = iter(replies)
-
-    def bind_tools(self, tools):
-        return self
-
-    def invoke(self, messages):
-        return next(self.replies)
-
-
 @pytest.fixture
-def return_call(conn, monkeypatch):
+def return_call(conn, script_model):
     order_number = conn.execute(
         "select number from orders where customer_id = %s order by placed_at desc limit 1",
         (CAMILLE,),
@@ -38,8 +25,7 @@ def return_call(conn, monkeypatch):
         "args": {"order_number": order_number, "skus": ["HLM-URB-01"], "reason": "too small"},
         "id": "call-1",
     }
-    model = ScriptedModel(AIMessage("", tool_calls=[call]), AIMessage("Done."))
-    monkeypatch.setattr(graph_module, "get_chat_model", lambda: model)
+    script_model(AIMessage("", tool_calls=[call]), AIMessage("Done."))
 
     # The tool commits through the pool, outside the test's rolled-back transaction,
     # and a return made by hand in the CLI would skew the counts.

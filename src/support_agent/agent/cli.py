@@ -1,17 +1,18 @@
 """Chat with the agent in the terminal, as a given customer.
 
 python -m support_agent.agent.cli --customer 2
+python -m support_agent.agent.cli --customer 2 --thread <id>   # pick up an old conversation
 """
 
 import argparse
 import uuid
 
 from langchain_core.messages import AIMessage, HumanMessage
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.types import Command
 
 from support_agent.agent.graph import build_graph
 from support_agent.agent.state import Context
+from support_agent.db import get_checkpointer
 
 
 def main() -> None:
@@ -19,11 +20,14 @@ def main() -> None:
     parser.add_argument(
         "--customer", type=int, required=True, help="customer id (1 to 5 are the demo scenarios)"
     )
+    parser.add_argument("--thread", help="id of a conversation to continue")
     args = parser.parse_args()
 
-    graph = build_graph(InMemorySaver())
-    config = {"configurable": {"thread_id": str(uuid.uuid4())}}
+    graph = build_graph(get_checkpointer())
+    thread_id = args.thread or str(uuid.uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
     context = Context(customer_id=args.customer)
+    print(f"conversation {thread_id}")
 
     while True:
         try:
