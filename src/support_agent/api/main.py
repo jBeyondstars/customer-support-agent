@@ -3,11 +3,23 @@ from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
+from langchain_core.messages import HumanMessage
+from langgraph.types import Command
 
 from support_agent.agent.graph import build_graph
 from support_agent.api import threads
 from support_agent.api.auth import CustomerId, create_token
-from support_agent.api.schemas import DemoLogin, Me, Thread, ThreadSummary, Token
+from support_agent.api.schemas import (
+    Confirmation,
+    DemoLogin,
+    Me,
+    NewMessage,
+    Thread,
+    ThreadSummary,
+    Token,
+)
+from support_agent.api.streaming import stream_run
 from support_agent.db import get_checkpointer, get_pool
 
 app = FastAPI(title="Nomad Cycles support agent")
@@ -71,6 +83,38 @@ def read_thread(thread_id: OwnedThread) -> Thread:
         messages=threads.to_chat(state.values.get("messages", [])),
         pending=threads.pending_actions(state),
     )
+
+
+@app.post("/threads/{thread_id}/messages")
+def send_message(
+    thread_id: OwnedThread, customer_id: CustomerId, body: NewMessage
+) -> StreamingResponse:
+    # A new message on top of a pending confirmation would leave the paused tool
+    # call without an answer, which breaks the conversation for good.
+    if is_waiting_for_confirmation(thread_id):
+        raise HTTPException(409, "Answer the pending confirmation first")
+    run_input = {"messages": [HumanMessage(body.content)]}
+    return event_stream(run_input, thread_id, customer_id)
+
+
+@app.post("/threads/{thread_id}/resume")
+def answer_confirmation(
+    thread_id: OwnedThread, customer_id: CustomerId, body: Confirmation
+) -> StreamingResponse:
+    if not is_waiting_for_confirmation(thread_id):
+        raise HTTPException(409, "Nothing is waiting for confirmation")
+    return event_stream(Command(resume=body.approved), thread_id, customer_id)
+
+
+def event_stream(run_input, thread_id: str, customer_id: int) -> StreamingResponse:
+    return StreamingResponse(
+        stream_run(get_graph(), run_input, thread_id, customer_id),
+        media_type="text/event-stream",
+    )
+
+
+def is_waiting_for_confirmation(thread_id: str) -> bool:
+    return bool(get_graph().get_state({"configurable": {"thread_id": thread_id}}).interrupts)
 
 
 def first_name(customer_id: int) -> str | None:

@@ -1,11 +1,20 @@
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DemoLogin(BaseModel):
     customer_id: int
+
+
+class NewMessage(BaseModel):
+    # The cap keeps a single message from costing a fortune in tokens.
+    content: str = Field(min_length=1, max_length=2000)
+
+
+class Confirmation(BaseModel):
+    approved: bool
 
 
 class Token(BaseModel):
