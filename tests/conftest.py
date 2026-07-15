@@ -31,7 +31,7 @@ class ScriptedModel:
 def script_model(monkeypatch):
     def use(*replies: AIMessage, verdict: Verdict = LET_THROUGH) -> None:
         model = ScriptedModel(*replies, verdict=verdict)
-        monkeypatch.setattr(graph_module, "get_chat_model", lambda: model)
-        monkeypatch.setattr(guard_module, "get_chat_model", lambda: model)
+        monkeypatch.setattr(graph_module, "get_chat_model", lambda **_: model)
+        monkeypatch.setattr(guard_module, "get_chat_model", lambda **_: model)
 
     return use

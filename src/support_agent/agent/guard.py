@@ -47,7 +47,9 @@ def screen(messages: list[AnyMessage]) -> Verdict:
             lines.append(f"Assistant: {message.text}")
     transcript = "\n".join(lines[-6:])
 
-    model = get_chat_model().with_structured_output(Verdict)
+    # Never streamed: nobody should see the verdict token by token, and the OpenAI
+    # SDK warns about the parsed object when a structured answer is streamed.
+    model = get_chat_model(streaming=False).with_structured_output(Verdict)
     return model.invoke(
         [
             SystemMessage(GUARD_PROMPT),

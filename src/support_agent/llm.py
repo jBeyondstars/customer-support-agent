@@ -14,5 +14,5 @@ def get_embeddings() -> Embeddings:
 
 
 @lru_cache
-def get_chat_model(name: str | None = None) -> BaseChatModel:
-    return init_chat_model(name or get_settings().chat_model)
+def get_chat_model(name: str | None = None, streaming: bool = True) -> BaseChatModel:
+    return init_chat_model(name or get_settings().chat_model, disable_streaming=not streaming)
