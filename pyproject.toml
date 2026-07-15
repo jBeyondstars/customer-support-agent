@@ -7,6 +7,7 @@ requires-python = ">=3.12"
 dependencies = [
     "faker>=40.41.0",
     "fastapi>=0.142.2",
+    "httpx>=0.28.1",
     "langchain>=1.4.3",
     "langchain-openai>=1.6.7",
     "langgraph-checkpoint-postgres>=3.1.2",
@@ -14,6 +15,7 @@ dependencies = [
     "pydantic-settings>=2.15.0",
     "pyjwt>=2.15.1",
     "pypdf>=6.19.0",
+    "streamlit>=1.65.0",
     "uvicorn[standard]>=0.54.0",
 ]
 
