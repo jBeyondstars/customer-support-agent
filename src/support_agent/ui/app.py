@@ -70,6 +70,16 @@ def show_sources(sources: list[dict]) -> None:
         st.caption("Pages checked: " + " · ".join(titles))
 
 
+def describe(action: dict) -> str:
+    args = action["args"]
+    if action["name"] == "create_return_request":
+        return (
+            f"Open a return on order **{args['order_number']}** for "
+            f"{', '.join(args['skus'])}, reason: *{args['reason']}*"
+        )
+    return f"{action['name']} {args}"
+
+
 def run_agent(path: str, payload: dict) -> None:
     """Stream one run into an assistant bubble, then reload the page from the API."""
     with st.chat_message("assistant"):
@@ -111,13 +121,27 @@ with st.sidebar:
 
 st.title("How can we help?")
 
-thread = call_api("GET", f"/threads/{st.session_state.thread_id}")
+thread_path = f"/threads/{st.session_state.thread_id}"
+thread = call_api("GET", thread_path)
 for message in thread["messages"]:
     with st.chat_message("user" if message["role"] == "customer" else "assistant"):
         st.markdown(message["content"])
         show_sources(message["sources"])
 
-if prompt := st.chat_input("Ask about an order, a return, a product..."):
+if thread["pending"]:
+    with st.container(border=True):
+        st.markdown("**Before I go ahead, can you confirm?**")
+        for action in thread["pending"]:
+            st.markdown(describe(action))
+        confirm, cancel = st.columns(2)
+        approved = confirm.button("Confirm", type="primary", use_container_width=True)
+        declined = cancel.button("Cancel", use_container_width=True)
+    if approved or declined:
+        run_agent(f"{thread_path}/resume", {"approved": approved})
+
+# While a confirmation is pending the API refuses new messages, so don't offer the box.
+placeholder = "Confirm or cancel above first" if thread["pending"] else "Ask about an order..."
+if prompt := st.chat_input(placeholder, disabled=bool(thread["pending"])):
     with st.chat_message("user"):
         st.markdown(prompt)
-    run_agent(f"/threads/{st.session_state.thread_id}/messages", {"content": prompt})
+    run_agent(f"{thread_path}/messages", {"content": prompt})
