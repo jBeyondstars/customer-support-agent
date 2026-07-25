@@ -116,17 +116,28 @@ def escalate_to_human(
     return f"Ticket #{ticket_id} created. The team replies by email within one working day."
 
 
+# The rule from the "Orders and payment" page, stated where the model sees the
+# status. Without it the model hedges ("the team will check if it's possible").
+PROCESSING_NOTE = "not shipped yet: the team can still cancel it or change the address"
+
+
 def format_summary(order: OrderSummary) -> str:
-    shipment = f" (carrier: {order.shipment_status})" if order.shipment_status == "delayed" else ""
+    if order.status == "processing":
+        status = f"processing ({PROCESSING_NOTE})"
+    elif order.shipment_status == "delayed":
+        status = f"{order.status} (carrier: delayed)"
+    else:
+        status = order.status
     return (
-        f"{order.number} | placed {order.placed_at:%Y-%m-%d} | {order.status}{shipment}"
+        f"{order.number} | placed {order.placed_at:%Y-%m-%d} | {status}"
         f" | €{order.total} | {order.items}"
     )
 
 
 def format_order(order: Order) -> str:
+    status = f"processing ({PROCESSING_NOTE})" if order.status == "processing" else order.status
     lines = [
-        f"Order {order.number}, placed {order.placed_at:%Y-%m-%d}, status {order.status}, "
+        f"Order {order.number}, placed {order.placed_at:%Y-%m-%d}, status {status}, "
         f"total €{order.total}",
         "Items:",
         *[
