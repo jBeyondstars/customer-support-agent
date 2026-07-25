@@ -134,10 +134,16 @@ def main() -> None:
     # scenario would make the numbers depend on luck.
     parser.add_argument("--repeat", type=int, default=3, help="runs per scenario")
     parser.add_argument("--no-judge", action="store_true", help="deterministic checks only")
+    parser.add_argument(
+        "--only", help="comma-separated scenario ids; prints the report without saving it"
+    )
     args = parser.parse_args()
 
     lines = (HERE / "datasets" / "scenarios.jsonl").read_text(encoding="utf-8").splitlines()
     scenarios = [json.loads(line) for line in lines if line.strip()]
+    if args.only:
+        wanted = args.only.split(",")
+        scenarios = [s for s in scenarios if s["id"] in wanted]
 
     with psycopg.connect(get_settings().database_url) as conn:
         latest = conn.execute("select max(placed_at) from orders").fetchone()[0]
@@ -158,8 +164,9 @@ def main() -> None:
                 run.grade = result
 
     report = render(runs, args.repeat)
-    (HERE / "reports").mkdir(exist_ok=True)
-    (HERE / "reports" / "scenarios.md").write_text(report, encoding="utf-8", newline="\n")
+    if not args.only:
+        (HERE / "reports").mkdir(exist_ok=True)
+        (HERE / "reports" / "scenarios.md").write_text(report, encoding="utf-8", newline="\n")
     print(report)
 
 
