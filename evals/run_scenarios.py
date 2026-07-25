@@ -1,9 +1,14 @@
 """Run the agent on scripted customer messages and check what it did.
 
-The checks don't need an LLM: which tools were called, whether the guard blocked
-the message, whether the run stopped to ask for confirmation, a few facts the
-answer must contain, and that nothing belonging to another customer (order
-number, tracking number, email) shows up in the answer or in any tool output.
+Two kinds of checks. The deterministic ones don't need an LLM: which tools were
+called, whether the guard blocked the message, whether the run stopped to ask
+for confirmation, a few facts the answer must contain, and that nothing
+belonging to another customer (order number, tracking number, email) shows up
+in the answer or in any tool output.
+
+Then a stronger model reads each answer next to the tool outputs and a reference
+note, and says whether it's correct and whether every fact in it is backed by
+the tools (judge.py). Skip that part with --no-judge.
 
 Expects a freshly seeded database: python scripts/seed_db.py
 """
@@ -19,6 +24,7 @@ from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import psycopg
+from judge import Grade, grade
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
@@ -40,6 +46,12 @@ class Run:
     pending: list[dict] = field(default_factory=list)
     tokens: int = 0
     failures: list[str] = field(default_factory=list)
+    grade: Grade | None = None
+
+    @property
+    def gradable(self) -> bool:
+        # Guard refusals and runs paused for confirmation have no answer to grade.
+        return bool(self.answer) and not self.blocked and "reference" in self.scenario
 
 
 def run_scenario(graph, scenario: dict) -> Run:
@@ -63,6 +75,10 @@ def run_scenario(graph, scenario: dict) -> Run:
             run.tool_outputs.append(message.text)
     run.pending = [action for pause in result.get("__interrupt__", []) for action in pause.value]
     return run
+
+
+def grade_run(run: Run) -> Grade:
+    return grade(run.scenario["message"], run.answer, run.tool_outputs, run.scenario["reference"])
 
 
 def check(run: Run, others: set[str]) -> list[str]:
@@ -117,6 +133,7 @@ def main() -> None:
     # The same message doesn't always get the same behaviour, one run per
     # scenario would make the numbers depend on luck.
     parser.add_argument("--repeat", type=int, default=3, help="runs per scenario")
+    parser.add_argument("--no-judge", action="store_true", help="deterministic checks only")
     args = parser.parse_args()
 
     lines = (HERE / "datasets" / "scenarios.jsonl").read_text(encoding="utf-8").splitlines()
@@ -133,8 +150,12 @@ def main() -> None:
     jobs = [scenario for scenario in scenarios for _ in range(args.repeat)]
     with ThreadPoolExecutor(max_workers=4) as pool:
         runs = list(pool.map(lambda s: run_scenario(graph, s), jobs))
-    for run in runs:
-        run.failures = check(run, everything - owned[run.scenario["customer"]])
+        for run in runs:
+            run.failures = check(run, everything - owned[run.scenario["customer"]])
+        if not args.no_judge:
+            to_grade = [run for run in runs if run.gradable]
+            for run, result in zip(to_grade, pool.map(grade_run, to_grade), strict=True):
+                run.grade = result
 
     report = render(runs, args.repeat)
     (HERE / "reports").mkdir(exist_ok=True)
@@ -169,15 +190,43 @@ def render(runs: list[Run], repeat: int) -> str:
         "|---|---|",
         *[f"| {category} | {passed[category]}/{total} |" for category, total in totals.items()],
         "",
-        "| scenario | passed | what went wrong | tools called (first run) |",
+    ]
+
+    graded = [run for run in runs if run.grade]
+    if graded:
+        verdicts = Counter(run.grade.correct for run in graded)
+        grounded = sum(run.grade.grounded for run in graded)
+        lines += [
+            f"Judge ({get_settings().judge_model}) on the {len(graded)} runs that produced "
+            f"an answer: correct {verdicts['yes']}, partly {verdicts['partly']}, "
+            f"wrong {verdicts['no']}. Grounded in the tool outputs: {grounded}/{len(graded)}.",
+            "",
+        ]
+
+    lines += [
+        "| scenario | checks passed | judge: correct / grounded | what went wrong |",
         "|---|---|---|---|",
     ]
     for scenario_id, group in by_scenario.items():
         ok = sum(not r.failures for r in group)
         problems = "; ".join(dict.fromkeys(f for r in group for f in r.failures)) or "-"
-        first = group[0]
-        tools = ", ".join(first.tools) or ("guard" if first.blocked else "-")
-        lines.append(f"| {scenario_id} | {ok}/{len(group)} | {problems} | {tools} |")
+        judged = [r.grade for r in group if r.grade]
+        judge = (
+            f"{sum(g.correct == 'yes' for g in judged)}/{len(judged)}"
+            f" / {sum(g.grounded for g in judged)}/{len(judged)}"
+            if judged
+            else "-"
+        )
+        lines.append(f"| {scenario_id} | {ok}/{len(group)} | {judge} | {problems} |")
+
+    notes = [
+        f"- **{run.scenario['id']}** ({run.grade.correct}, "
+        f"{'grounded' if run.grade.grounded else 'NOT grounded'}): {run.grade.explanation}"
+        for run in graded
+        if run.grade.correct != "yes" or not run.grade.grounded
+    ]
+    if notes:
+        lines += ["", "## Judge notes", "", *notes]
     return "\n".join(lines) + "\n"
 
 
