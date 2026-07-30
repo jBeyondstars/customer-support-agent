@@ -1,3 +1,10 @@
+x-app: &app
+  build: .
+  image: support-agent
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql://support:support@db:5432/support
+
 services:
   db:
     image: pgvector/pgvector:pg17
@@ -13,6 +20,40 @@ services:
       test: ["CMD-SHELL", "pg_isready -U support"]
       interval: 5s
       retries: 10
+
+  # Resets the demo data and indexes the help pages, then exits. Re-indexing
+  # only embeds pages that changed, so after the first run it costs nothing.
+  setup:
+    <<: *app
+    command: sh -c "python scripts/seed_db.py && python -m support_agent.rag.ingest"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    <<: *app
+    ports:
+      - "8000:8000"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      retries: 10
+
+  ui:
+    <<: *app
+    command: >
+      streamlit run src/support_agent/ui/app.py
+      --server.address 0.0.0.0 --server.headless true --server.fileWatcherType none
+    environment:
+      API_URL: http://api:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      api:
+        condition: service_healthy
 
 volumes:
   pgdata:
